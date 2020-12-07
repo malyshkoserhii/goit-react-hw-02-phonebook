@@ -1,61 +1,65 @@
 import { Component } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-import ContactsList from './components/ContactsList';
+import ContactForm from './components/ContactForm';
+import ContactList from './components/ContactList';
+import Filter from './components/Filter';
 
 class App extends Component {
   state = {
     contacts: [],
-    name: '',
+    filter: '',
   };
 
-  nameInputChange = e => {
-    const { name, value } = e.currentTarget;
-    this.setState({
-      [name]: value.trim(),
-    });
-  };
-
-  addNewContact = name => {
+  addNewContact = (name, number) => {
     const contact = {
       id: uuidv4(),
       name,
+      number,
     };
 
     this.setState(({ contacts }) => ({ contacts: [contact, ...contacts] }));
   };
 
-  handleNameSubmit = e => {
-    e.preventDefault();
-
-    this.reset();
+  deleteContact = contactId => {
+    this.setState(prevState => ({
+      contacts: prevState.contacts.filter(contact => contact.id !== contactId),
+    }));
   };
 
-  reset() {
-    this.setState({ name: '' });
-    console.log('this.state', this.state);
-  }
+  changeFilter = e => {
+    this.setState({ filter: e.currentTarget.value });
+  };
+
+  getExistedContact = name => {
+    const { contacts } = this.state;
+    return contacts.find(contact => contact.name === name);
+  };
+
+  getFilteredContacts = () => {
+    const { filter, contacts } = this.state;
+    const normalizedFilter = filter.toLocaleLowerCase();
+
+    return contacts.filter(contact =>
+      contact.name.toLocaleLowerCase().includes(normalizedFilter),
+    );
+  };
 
   render() {
-    const { contacts, name } = this.state;
+    const { filter } = this.state;
+    const filteredContacts = this.getFilteredContacts();
+
     return (
       <>
-        <form onSubmit={this.handleNameSubmit}>
-          <label>
-            Name
-            <input
-              name="name"
-              value={this.state.name}
-              onChange={this.nameInputChange}
-            />
-          </label>
-
-          <button type="submit" onClick={() => this.addNewContact(name)}>
-            Add contact
-          </button>
-        </form>
-
-        <ContactsList contacts={contacts} />
+        <ContactForm
+          onAddNewContact={this.addNewContact}
+          exsisted={this.getExistedContact}
+        />
+        <Filter value={filter} changeFilter={this.changeFilter} />
+        <ContactList
+          contacts={filteredContacts}
+          onDeleteContact={this.deleteContact}
+        />
       </>
     );
   }
